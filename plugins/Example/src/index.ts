@@ -17,4 +17,7 @@ export const unloads = new Set<LunaUnload>();
 // Log to console whenever changing page
 redux.intercept("page/SET_PAGE_ID", unloads, console.log);
 
-MediaItem.onMediaTransition(unloads, (mediaItem) => alert(`Media item transitioned: ${mediaItem.title}`));
+MediaItem.onMediaTransition(unloads, async (mediaItem) => {
+    const title = await mediaItem.title();
+    alert(`Media item transitioned: ${title}`);
+});
