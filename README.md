@@ -10,8 +10,6 @@ Adds a button in the bottom bar next to the volume button to reach the lyrics ta
 
 > ![Screenshot of the button](/images/OneClickLyrics.png)
 
----
-
-### Installing the plugins
+## Installing the plugins
 
 You can install the plugins by finding my store directly in the TidaLuna modded client, or by manually installing it with https://github.com/Foukapik/TidaLuna-Plugins/releases/download/latest/store.json
