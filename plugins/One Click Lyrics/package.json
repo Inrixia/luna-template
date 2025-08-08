@@ -1,0 +1,11 @@
+{
+	"name": "@foukapik/OneClickLyrics",
+	"description": "Adds a button to the bottom bar to go to the lyrics tab",
+	"author": {
+		"name": "Foukapik",
+		"url": "https://github.com/Foukapik",
+		"avatarUrl": "https://avatars.githubusercontent.com/u/56433107"
+	},
+	"main": "./src/index.ts",
+	"type": "module"
+}
