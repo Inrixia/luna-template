@@ -14,7 +14,7 @@ const icon =
     <path d="M5 19.5C4.5355 19.5 4.30325 19.5 4.10891 19.4692C3.03918 19.2998 2.20021 18.4608 2.03078 17.3911C2 17.1968 2 16.9645 2 16.5V7.5C2 7.0355 2 6.80325 2.03078 6.60891C2.20021 5.53918 3.03918 4.70021 4.10891 4.53078C4.30325 4.5 4.5355 4.5 5 4.5" stroke="#FFFFFF" stroke-width="1.5"/>
 </svg>`;
 
-let addedElement: HTMLDivElement | null = null;
+let addedElement: HTMLButtonElement | null = null;
 let observer: MutationObserver | null = null;
 
 const lyricsLabel = "Lyrics";
