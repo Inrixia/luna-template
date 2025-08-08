@@ -1,5 +1,5 @@
 import { Tracer, type LunaUnload } from "@luna/core";
-import { ipcRenderer, MediaItem, ContextMenu, redux } from "@luna/lib";
+import { MediaItem, redux, observePromise } from "@luna/lib";
 
 export const { errSignal, trace } = Tracer("[OneClickLyrics]");
 export const unloads = new Set<LunaUnload>();
@@ -15,15 +15,32 @@ const icon =
 </svg>`;
 
 let addedElement: HTMLButtonElement | null = null;
-let observer: MutationObserver | null = null;
 
 const lyricsLabel = "Lyrics";
 const lyricsNotAvailableLabel = "No lyrics available";
+const buttonId = "oneClickLyricsButton";
+const volumeContainerId = "._sliderContainer_15490c0";
+
+observePromise(unloads, volumeContainerId).then((volumeContainer) => {
+    if (!volumeContainer || addedElement) return;
+
+    addedElement = createButton();
+    (volumeContainer as HTMLDivElement).before(addedElement);
+
+    // On plugin load, check current song and update button state using lyrics from redux store
+    const state = redux.store.getState();
+    const currentTrack = state.playQueue.elements[state.playQueue.currentIndex];
+    const currentTrackId = currentTrack?.mediaItemId;
+    
+    MediaItem.fromId(currentTrackId).then(async (mediaItem) => {
+        await toggleOneClickLyricsButton(mediaItem as MediaItem);
+    });
+});
 
 function createButton(): HTMLButtonElement {
     // Create a the button
     const wrapper = document.createElement("button");
-    wrapper.id = "oneClickLyricsButton";
+    wrapper.id = buttonId;
     wrapper.ariaLabel = lyricsLabel;
     wrapper.title = lyricsLabel;
     wrapper.type = "button";
@@ -32,14 +49,14 @@ function createButton(): HTMLButtonElement {
     // Set the onclick action: open the song details, then click on the lyrics tab
     wrapper.addEventListener("click", () => {
         const bottomBar = document.querySelector('#footerPlayer');
-        if (bottomBar) {
-            (bottomBar as HTMLElement).click();
-            waitForElm('[data-test="tabs-lyrics"]').then((lyricsTab) => {
-                if (lyricsTab) {
-                    (lyricsTab as HTMLElement).click();
-                }
-            });
-        }
+        if (!bottomBar) return;
+        
+        (bottomBar as HTMLElement).click();
+        observePromise(unloads, '[data-test="tabs-lyrics"]', 2000).then((lyricsTab) => {
+            if (lyricsTab) {
+                (lyricsTab as HTMLElement).click();
+            }
+        });
     });
 
     // Create the svg icon
@@ -51,76 +68,28 @@ function createButton(): HTMLButtonElement {
     return wrapper;
 };
 
-unloads.add(() => {
-    if (addedElement?.parentElement) {
-        addedElement.parentElement.removeChild(addedElement);
-    }
-    addedElement = null;
-
-    if (observer) {
-        observer.disconnect();
-        observer = null;
-    }
-});
-
+// Refresh the button state when the song changes
 MediaItem.onMediaTransition(unloads, async (mediaItem) => {
     await toggleOneClickLyricsButton(mediaItem);
 });
 
-observer = new MutationObserver(() => {
-    const container = document.querySelector("._moreContainer_f6162c8") as HTMLDivElement;
-    const volumeContainer = document.querySelector("._sliderContainer_15490c0") as HTMLDivElement;
-    if (!container || addedElement) return;
-
-    addedElement = createButton();
-    volumeContainer.before(addedElement);
-
-    // On plugin load, check current song and update button state using lyrics from redux store
-    const state = redux.store.getState();
-    const currentTrack = state.playQueue.elements[state.playQueue.currentIndex];
-    const currentTrackId = currentTrack?.mediaItemId;
-    
-    MediaItem.fromId(currentTrackId).then(async (mediaItem) => {
-        await toggleOneClickLyricsButton(mediaItem as MediaItem);
-    });
-    
-});
-
-observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-});
-
 async function toggleOneClickLyricsButton(mediaItem: MediaItem) {
     const lyrics = await mediaItem.lyrics();
-    const button = document.getElementById("oneClickLyricsButton") as HTMLButtonElement | null;
-    if (button) {
-        if (lyrics && lyrics.lyrics) {
-            button.disabled = false;
-            button.title = lyricsLabel;
-        } else {
-            button.disabled = true;
-            button.title = lyricsNotAvailableLabel;
-        }
+    const button = document.getElementById(buttonId) as HTMLButtonElement | null;
+    if (!button) return;
+
+    if (lyrics && lyrics.lyrics) {
+        button.disabled = false;
+        button.title = lyricsLabel;
+    } else {
+        button.disabled = true;
+        button.title = lyricsNotAvailableLabel;
     }
 }
 
-function waitForElm(selector: string): Promise<Element | null> {
-    return new Promise(resolve => {
-        if (document.querySelector(selector)) {
-            return resolve(document.querySelector(selector));
-        }
-
-        const observer = new MutationObserver(mutations => {
-            if (document.querySelector(selector)) {
-                observer.disconnect();
-                resolve(document.querySelector(selector));
-            }
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    });
-}
+unloads.add(() => {
+    if (addedElement) {
+        addedElement.remove();
+    }
+    addedElement = null;
+});
