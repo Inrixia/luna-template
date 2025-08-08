@@ -1,6 +1,6 @@
 {
-	"name": "@luna/template",
-	"description": "Template repo for making your own luna plugins",
+	"name": "@foukapik/TidaLuna-Plugins",
+	"description": "Collections of plugins for TidaLuna",
 	"type": "module",
 	"scripts": {
 		"watch": "concurrently \"pnpm:build --watch\" pnpm:serve",
